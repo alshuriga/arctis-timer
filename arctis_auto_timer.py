@@ -63,6 +63,7 @@ DEFAULTS = {
     "silence_duration_seconds": 30, # seconds of silence before activating the timer
     "active_duration_seconds": 2,   # seconds of audio before deactivating the timer
     "silence_threshold": 0.001,     # peak audio level considered silent
+    "notifications_enabled": True,  # show Windows toast notifications on state change
 }
 
 
@@ -212,8 +213,9 @@ class AudioMonitor(threading.Thread):
 
             self._stop_event.wait(poll)
 
-    @staticmethod
-    def _notify(title: str, message: str):
+    def _notify(self, title: str, message: str):
+        if not self.settings.get("notifications_enabled", True):
+            return
         try:
             toast(APP_NAME, f"{title} — {message}",
                   audio={"src": "ms-winsoundevent:Notification.Default", "silent": "true"})
@@ -271,23 +273,34 @@ def open_settings_window(settings: dict, on_save):
     v_silence_s  = tk.IntVar(value=settings["silence_duration_seconds"])
     v_active_s   = tk.IntVar(value=settings["active_duration_seconds"])
     v_threshold  = tk.DoubleVar(value=settings["silence_threshold"])
+    v_notifs     = tk.BooleanVar(value=settings.get("notifications_enabled", True))
 
     pad = tk.Frame(win, bg=BG_DARK, padx=20, pady=16)
     pad.pack(fill="both", expand=True)
 
     heading(pad, "Auto-Off")
     row(pad, "Inactive timer (after silence)", v_inactive, 1, 90, "min")
-    row(pad, "Silence duration to trigger",    v_silence_s, 5, 3600, "sec")
-    row(pad, "Audio duration to cancel timer", v_active_s,  1, 60,   "sec")
 
-    heading(pad, "Detection")
+    heading(pad, "Silence Detection")
+    row(pad, "Silence detect duration",        v_silence_s, 5, 3600, "sec")
+    row(pad, "Audio duration to cancel timer", v_active_s,  1, 60,   "sec")
     row(pad, "Silence threshold (peak level)", v_threshold, 0.0001, 0.1, "")
+
+    heading(pad, "Notifications")
+    notif_frame = tk.Frame(pad, bg=BG_CARD, pady=6, padx=10)
+    notif_frame.pack(fill="x", pady=3)
+    ttk.Checkbutton(
+        notif_frame,
+        text="Show toast notifications on state change",
+        variable=v_notifs,
+    ).pack(anchor="w")
 
     def on_save_click():
         settings["inactive_timer_minutes"]    = v_inactive.get()
         settings["silence_duration_seconds"]  = v_silence_s.get()
         settings["active_duration_seconds"]   = v_active_s.get()
         settings["silence_threshold"]         = round(v_threshold.get(), 6)
+        settings["notifications_enabled"]     = bool(v_notifs.get())
         save_settings(settings)
         if on_save:
             on_save()
