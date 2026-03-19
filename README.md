@@ -8,7 +8,7 @@ A lightweight Windows system tray utility that automatically manages the **Steel
 - **AFK / Idle Detection**: Automatically triggers the auto-off timer if you are away (no keyboard/mouse input), even if music is playing.
 - **Customizable Modes**: Choose to monitor only silence, only idle time, or both.
 - **Live Peak Meter**: Calibrate your silence threshold visually with a real-time audio meter in the settings.
-- **macOS-inspired UI**: A clean, modern light theme with intuitive controls and help tooltips.
+- **Premium Light UI**: A clean, modern white theme with intuitive controls and help tooltips.
 - **Direct HID Control**: Bypasses the SteelSeries software to send hardware commands directly to the USB receiver.
 
 ## How It Works
