@@ -6,14 +6,60 @@ via USB HID. Runs as a system tray application.
 
 import ctypes
 import ctypes.wintypes as wintypes
-import json
 import os
+import sys
 import threading
 import time
+import json
 import tkinter as tk
 from tkinter import ttk
+import winreg
 
 import hid
+import pystray
+from PIL import Image, ImageDraw
+from pycaw.pycaw import AudioUtilities, IAudioMeterInformation
+from win11toast import toast
+
+# --- Win32 Registry for Auto-Start ---
+REG_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
+REG_NAME = "ArctisTimer"
+
+def get_executable_path():
+    """Returns the full path to the current executable or script."""
+    if getattr(sys, 'frozen', False):
+        return sys.executable
+    return os.path.abspath(sys.argv[0])
+
+def is_autostart_enabled() -> bool:
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH, 0, winreg.KEY_READ) as key:
+            value, _ = winreg.QueryValueEx(key, REG_NAME)
+            # Compare current path with stored path (allow for small quotes/path diffs)
+            curr = get_executable_path().lower().strip('"')
+            stored = value.lower().strip('"')
+            return curr in stored
+    except FileNotFoundError:
+        return False
+    except Exception:
+        return False
+
+def set_autostart(enabled: bool):
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_PATH, 0, winreg.KEY_SET_VALUE) as key:
+            if enabled:
+                path = f'"{get_executable_path()}"'
+                winreg.SetValueEx(key, REG_NAME, 0, winreg.REG_SZ, path)
+                print(f"[REG] Auto-start enabled: {path}")
+            else:
+                try:
+                    winreg.DeleteValue(key, REG_NAME)
+                    print("[REG] Auto-start disabled")
+                except FileNotFoundError:
+                    pass
+    except Exception as e:
+        print(f"[REG] Error managing auto-start: {e}")
+
 import pystray
 from PIL import Image, ImageDraw
 from pycaw.pycaw import AudioUtilities, IAudioMeterInformation
@@ -468,6 +514,7 @@ def open_settings_window(settings: dict, on_save):
     v_det_mode   = tk.StringVar(value=settings.get("detection_mode", "Both"))
     v_notif_mode = tk.StringVar(value=settings.get("notification_mode", "Both"))
     v_notifs     = tk.BooleanVar(value=settings.get("notifications_enabled", True))
+    v_autostart  = tk.BooleanVar(value=is_autostart_enabled())
 
     pad = tk.Frame(win, bg=BG_DARK, padx=25, pady=20)
     pad.pack(fill="both", expand=True)
@@ -501,14 +548,27 @@ def open_settings_window(settings: dict, on_save):
                           highlightthickness=1, highlightbackground=BORDER)
     notif_card.pack(fill="x", pady=2)
     
-    cb = ttk.Checkbutton(
+    cb_notif = ttk.Checkbutton(
         notif_card,
         text="Enable desktop notifications (Global)",
         variable=v_notifs,
         style="TCheckbutton"
     )
-    cb.pack(side="left")
+    cb_notif.pack(side="left")
     ToolTip(notif_card, "Globally turn Windows notifications on or off.")
+
+    startup_card = tk.Frame(pad, bg=BG_CARD, pady=10, padx=12, 
+                            highlightthickness=1, highlightbackground=BORDER)
+    startup_card.pack(fill="x", pady=2)
+    
+    cb_start = ttk.Checkbutton(
+        startup_card,
+        text="Run automatically at Windows login",
+        variable=v_autostart,
+        style="TCheckbutton"
+    )
+    cb_start.pack(side="left")
+    ToolTip(startup_card, "Enable or disable automatic start when you log into Windows.")
 
     def on_save_click():
         settings["inactive_timer_minutes"]    = v_inactive.get()
@@ -520,6 +580,7 @@ def open_settings_window(settings: dict, on_save):
         settings["notification_mode"]         = v_notif_mode.get()
         settings["notifications_enabled"]     = bool(v_notifs.get())
         save_settings(settings)
+        set_autostart(v_autostart.get())
         if on_save:
             on_save()
         win.destroy()
