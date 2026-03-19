@@ -224,49 +224,116 @@ class AudioMonitor(threading.Thread):
 
 
 # ---------------------------------------------------------------------------
+# ToolTips
+# ---------------------------------------------------------------------------
+
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tip_window = None
+        self.id = None
+        self.x = self.y = 0
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+
+    def enter(self, event=None):
+        self.schedule()
+
+    def leave(self, event=None):
+        self.unschedule()
+        self.hidetip()
+
+    def schedule(self):
+        self.unschedule()
+        self.id = self.widget.after(1000, self.showtip)
+
+    def unschedule(self):
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self, event=None):
+        if self.tip_window or not self.text:
+            return
+        x, y, cx, cy = self.widget.bbox("insert")
+        x = x + self.widget.winfo_rootx() + 27
+        y = y + cy + self.widget.winfo_rooty() + 27
+        self.tip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(1)
+        tw.wm_geometry("+%d+%d" % (x, y))
+        label = tk.Label(tw, text=self.text, justify='left',
+                         background="#2d3748", foreground="#f8fafc", relief='flat',
+                         border=1, padx=8, pady=5, font=("Segoe UI Variable Text", 9))
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tip_window
+        self.tip_window = None
+        if tw:
+            tw.destroy()
+
+
+# ---------------------------------------------------------------------------
 # Settings window (Tkinter)
 # ---------------------------------------------------------------------------
 
-ACCENT   = "#10b981"   # emerald green
-BG_DARK  = "#1e1e2e"
-BG_CARD  = "#2a2a3d"
-FG_TEXT  = "#e2e8f0"
-FG_DIM   = "#94a3b8"
+# --- UI Theme ---
+ACCENT   = "#2dd4bf"   # teal/cyan
+BG_DARK  = "#0f172a"   # deep slate
+BG_CARD  = "#1e293b"   # lighter slate
+FG_TEXT  = "#f8fafc"   # pure white
+FG_DIM   = "#94a3b8"   # slate grey
+BORDER   = "#334155"
 
 
 def open_settings_window(settings: dict, on_save):
-    """Open the settings dialog on the calling thread (must be main thread)."""
+    """Open the settings dialog with a modern, stylish look."""
     win = tk.Toplevel()
     win.title(f"{APP_NAME} — Settings")
     win.configure(bg=BG_DARK)
     win.resizable(False, False)
     win.attributes("-topmost", True)
 
-    # Icon
-    try:
-        win.iconbitmap(default="")
-    except Exception:
-        pass
-
-    def label(parent, text, **kw):
-        return tk.Label(parent, text=text, bg=BG_DARK, fg=FG_DIM,
-                        font=("Segoe UI", 9), **kw)
+    # Apply style to ttk components
+    style = ttk.Style()
+    style.theme_use('clam')
+    style.configure("TSpinbox", fieldbackground=BG_CARD, background=BG_CARD, 
+                    foreground=FG_TEXT, bordercolor=BORDER, arrowcolor=ACCENT)
+    
+    # Modern Checkbutton style
+    style.configure("TCheckbutton", background=BG_CARD, foreground=FG_TEXT, font=("Segoe UI Variable Text", 9))
+    style.map("TCheckbutton", background=[('active', BG_CARD)], foreground=[('active', ACCENT)])
 
     def heading(parent, text):
-        tk.Label(parent, text=text, bg=BG_DARK, fg=FG_TEXT,
-                 font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(12, 2))
+        f = tk.Frame(parent, bg=BG_DARK)
+        f.pack(fill="x", pady=(15, 5))
+        tk.Label(f, text=text, bg=BG_DARK, fg=ACCENT,
+                 font=("Segoe UI Variable Display", 10, "bold")).pack(side="left")
 
-    def row(parent, lbl_text, var, from_, to_, unit=""):
-        frame = tk.Frame(parent, bg=BG_CARD, pady=6, padx=10)
-        frame.pack(fill="x", pady=3)
-        tk.Label(frame, text=lbl_text, bg=BG_CARD, fg=FG_TEXT,
-                 font=("Segoe UI", 9), width=30, anchor="w").pack(side="left")
+    def row(parent, lbl_text, var, from_, to_, unit="", help_text=""):
+        frame = tk.Frame(parent, bg=BG_CARD, pady=10, padx=12, 
+                         highlightthickness=1, highlightbackground=BORDER)
+        frame.pack(fill="x", pady=2)
+        
+        lbl = tk.Label(frame, text=lbl_text, bg=BG_CARD, fg=FG_TEXT,
+                 font=("Segoe UI Variable Text", 9), width=28, anchor="w")
+        lbl.pack(side="left")
+        
         sb = ttk.Spinbox(frame, from_=from_, to=to_, textvariable=var,
-                         width=6, font=("Segoe UI", 9))
-        sb.pack(side="left", padx=(0, 6))
+                         width=6, font=("Segoe UI Variable Text", 9))
+        sb.pack(side="left", padx=(0, 8))
+        
         if unit:
-            tk.Label(frame, text=unit, bg=BG_CARD, fg=FG_DIM,
-                     font=("Segoe UI", 9)).pack(side="left")
+            u_lbl = tk.Label(frame, text=unit, bg=BG_CARD, fg=FG_DIM,
+                     font=("Segoe UI Variable Text", 9))
+            u_lbl.pack(side="left")
+            
+        if help_text:
+            ToolTip(frame, help_text)
+            ToolTip(lbl, help_text)
+            ToolTip(sb, help_text)
 
     # Variables
     v_inactive   = tk.IntVar(value=settings["inactive_timer_minutes"])
@@ -275,25 +342,39 @@ def open_settings_window(settings: dict, on_save):
     v_threshold  = tk.DoubleVar(value=settings["silence_threshold"])
     v_notifs     = tk.BooleanVar(value=settings.get("notifications_enabled", True))
 
-    pad = tk.Frame(win, bg=BG_DARK, padx=20, pady=16)
+    pad = tk.Frame(win, bg=BG_DARK, padx=25, pady=20)
     pad.pack(fill="both", expand=True)
 
-    heading(pad, "Auto-Off")
-    row(pad, "Inactive timer (after silence)", v_inactive, 1, 90, "min")
+    header_lbl = tk.Label(pad, text="App Preferences", bg=BG_DARK, fg=FG_TEXT,
+                          font=("Segoe UI Variable Display", 14, "bold"))
+    header_lbl.pack(anchor="w", pady=(0, 10))
 
-    heading(pad, "Silence Detection")
-    row(pad, "Silence detect duration",        v_silence_s, 5, 3600, "sec")
-    row(pad, "Audio duration to cancel timer", v_active_s,  1, 60,   "sec")
-    row(pad, "Silence threshold (peak level)", v_threshold, 0.0001, 0.1, "")
+    heading(pad, "AUTO-OFF LOGIC")
+    row(pad, "Inactivity timer (when silent)", v_inactive, 1, 90, "min",
+        "Sets how many minutes after silence until the headset turns itself off.")
 
-    heading(pad, "Notifications")
-    notif_frame = tk.Frame(pad, bg=BG_CARD, pady=6, padx=10)
-    notif_frame.pack(fill="x", pady=3)
-    ttk.Checkbutton(
-        notif_frame,
-        text="Show toast notifications on state change",
+    heading(pad, "TIMING & DETECTION")
+    row(pad, "Silence detection duration",     v_silence_s, 5, 3600, "sec",
+        "How long audio must stay quiet before the auto-off timer starts.")
+    row(pad, "Audio detection duration",       v_active_s,  1, 60,   "sec",
+        "How long audio must play before the headset cancels any pending auto-off timer.")
+    row(pad, "Silence threshold (peak)",       v_threshold, 0.0001, 0.1, "",
+        "The sensitivity for audio detection (lower = more sensitive).")
+
+    heading(pad, "INTERFACE")
+    notif_card = tk.Frame(pad, bg=BG_CARD, pady=10, padx=12, 
+                          highlightthickness=1, highlightbackground=BORDER)
+    notif_card.pack(fill="x", pady=2)
+    
+    cb = ttk.Checkbutton(
+        notif_card,
+        text="Enable desktop notifications",
         variable=v_notifs,
-    ).pack(anchor="w")
+        style="TCheckbutton"
+    )
+    cb.pack(side="left")
+    ToolTip(notif_card, "Show a popup when the headset state changes.")
+    ToolTip(cb, "Show a popup when the headset state changes.")
 
     def on_save_click():
         settings["inactive_timer_minutes"]    = v_inactive.get()
@@ -306,21 +387,24 @@ def open_settings_window(settings: dict, on_save):
             on_save()
         win.destroy()
 
-    btn_frame = tk.Frame(win, bg=BG_DARK)
-    btn_frame.pack(fill="x", padx=20, pady=(0, 16))
+    btn_frame = tk.Frame(win, bg=BG_DARK, pady=20, padx=25)
+    btn_frame.pack(fill="x")
 
     save_btn = tk.Button(
-        btn_frame, text="Save", command=on_save_click,
-        bg=ACCENT, fg="white", font=("Segoe UI", 9, "bold"),
-        relief="flat", padx=16, pady=6, cursor="hand2",
-        activebackground="#059669", activeforeground="white",
+        btn_frame, text="Apply Changes", command=on_save_click,
+        bg=ACCENT, fg=BG_DARK, font=("Segoe UI Variable Text", 9, "bold"),
+        relief="flat", padx=20, pady=8, cursor="hand2",
+        activebackground="#5eead4", activeforeground=BG_DARK,
     )
     save_btn.pack(side="right")
-    tk.Button(
+    
+    cancel_btn = tk.Button(
         btn_frame, text="Cancel", command=win.destroy,
-        bg=BG_CARD, fg=FG_DIM, font=("Segoe UI", 9),
-        relief="flat", padx=16, pady=6, cursor="hand2",
-    ).pack(side="right", padx=(0, 8))
+        bg=BG_DARK, fg=FG_DIM, font=("Segoe UI Variable Text", 9),
+        relief="flat", padx=15, pady=8, cursor="hand2",
+        activebackground=BG_CARD, activeforeground=FG_TEXT
+    )
+    cancel_btn.pack(side="right", padx=(0, 10))
 
     # Center on screen
     win.update_idletasks()
@@ -329,7 +413,6 @@ def open_settings_window(settings: dict, on_save):
     y = (win.winfo_screenheight() - h) // 2
     win.geometry(f"+{x}+{y}")
     win.grab_set()
-
 
 # ---------------------------------------------------------------------------
 # Tray icon

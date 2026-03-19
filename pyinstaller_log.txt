@@ -1,0 +1,51 @@
+109 INFO: PyInstaller: 6.19.0, contrib hooks: 2026.3
+110 INFO: Python: 3.10.6
+116 INFO: Platform: Windows-10-10.0.26200-SP0
+116 INFO: Python environment: C:\Users\alshu\AppData\Local\Programs\Python\Python310
+120 INFO: Module search paths (PYTHONPATH):
+['c:\\users\\alshu\\appdata\\local\\programs\\python\\python310\\scripts\\pyinstaller.exe',
+ 'C:\\Users\\alshu\\AppData\\Local\\Programs\\Python\\Python310\\python310.zip',
+ 'C:\\Users\\alshu\\AppData\\Local\\Programs\\Python\\Python310\\DLLs',
+ 'C:\\Users\\alshu\\AppData\\Local\\Programs\\Python\\Python310\\lib',
+ 'C:\\Users\\alshu\\AppData\\Local\\Programs\\Python\\Python310',
+ 'C:\\Users\\alshu\\AppData\\Roaming\\Python\\Python310\\site-packages',
+ 'C:\\Users\\alshu\\AppData\\Roaming\\Python\\Python310\\site-packages\\win32',
+ 'C:\\Users\\alshu\\AppData\\Roaming\\Python\\Python310\\site-packages\\win32\\lib',
+ 'C:\\Users\\alshu\\AppData\\Roaming\\Python\\Python310\\site-packages\\Pythonwin',
+ 'C:\\Users\\alshu\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages',
+ 'D:\\projects\\arctis-timer']
+424 INFO: checking Analysis
+508 INFO: checking PYZ
+553 INFO: checking PKG
+570 INFO: Building because D:\projects\arctis-timer\build\ArctisTimer\localpycs\pyimod02_importers.pyc changed
+570 INFO: Building PKG (CArchive) ArctisTimer.pkg
+7214 INFO: Building PKG (CArchive) ArctisTimer.pkg completed successfully.
+7231 INFO: Bootloader C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+7231 INFO: checking EXE
+7237 INFO: Building because toc changed
+7238 INFO: Building EXE from EXE-00.toc
+Traceback (most recent call last):
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "c:\users\alshu\appdata\local\programs\python\python310\scripts\pyinstaller.exe\__main__.py", line 7, in <module>
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\__main__.py", line 231, in _console_script_run
+    run()
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\__main__.py", line 215, in run
+    run_build(pyi_config, spec_file, **vars(args))
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\__main__.py", line 70, in run_build
+    PyInstaller.building.build_main.main(pyi_config, spec_file, **kwargs)
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\building\build_main.py", line 1275, in main
+    build(specfile, distpath, workpath, clean_build)
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\building\build_main.py", line 1213, in build
+    exec(code, spec_namespace)
+  File "ArctisTimer.spec", line 31, in <module>
+    exe = EXE(
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\building\api.py", line 675, in __init__
+    self.__postinit__()
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\building\datastruct.py", line 184, in __postinit__
+    self.assemble()
+  File "C:\Users\alshu\AppData\Local\Programs\Python\Python310\lib\site-packages\PyInstaller\building\api.py", line 769, in assemble
+    os.remove(self.name)
+PermissionError: [WinError 5] Access is denied: 'D:\\projects\\arctis-timer\\dist\\ArctisTimer.exe'
