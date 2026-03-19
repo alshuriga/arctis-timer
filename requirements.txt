@@ -1,0 +1,6 @@
+pycaw
+hidapi
+win11toast
+pystray
+pillow
+pyinstaller
