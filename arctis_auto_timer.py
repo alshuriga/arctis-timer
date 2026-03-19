@@ -50,6 +50,23 @@ OPEN_EXISTING        = 3
 INVALID_HANDLE_VALUE = wintypes.HANDLE(-1).value
 
 _kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+_user32   = ctypes.WinDLL("user32",   use_last_error=True)
+
+class LASTINPUTINFO(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.UINT),
+        ("dwTime", wintypes.DWORD),
+    ]
+
+def get_idle_time() -> float:
+    """Return seconds since last mouse/keyboard activity."""
+    lii = LASTINPUTINFO()
+    lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+    if _user32.GetLastInputInfo(ctypes.byref(lii)):
+        # dwTime is in ms since system start. GetTickCount is also ms since system start.
+        millis = _kernel32.GetTickCount() - lii.dwTime
+        return millis / 1000.0
+    return 0.0
 
 # ---------------------------------------------------------------------------
 # Settings
@@ -64,6 +81,7 @@ DEFAULTS = {
     "active_duration_seconds": 2,   # seconds of audio before deactivating the timer
     "silence_threshold": 0.001,     # peak audio level considered silent
     "notifications_enabled": True,  # show Windows toast notifications on state change
+    "afk_timeout_minutes": 10,      # If idle this long, force inactivity timer even if playing
 }
 
 
@@ -186,9 +204,11 @@ class AudioMonitor(threading.Thread):
             poll            = 2.0
 
             playing = self._peek() > threshold
+            idle    = get_idle_time()
+            afk     = idle >= (s.get("afk_timeout_minutes", 10) * 60)
             now     = time.time()
 
-            if playing:
+            if playing and not afk:
                 self._silence_start = None
                 if self._active_start is None:
                     self._active_start = now
@@ -203,12 +223,15 @@ class AudioMonitor(threading.Thread):
                 if self._silence_start is None:
                     self._silence_start = now
                 elapsed = now - self._silence_start
+                
+                # We trigger if it's silent OR if we are AFK
+                reason = "Silence" if not playing else "AFK/Idle"
                 if self._state != "INACTIVE" and elapsed >= silence_needed:
                     ts = time.strftime("%H:%M:%S")
-                    print(f"[{ts}] Silence {elapsed:.0f}s → timer={inactive_min}min")
+                    print(f"[{ts}] {reason} ({elapsed:.0f}s) → timer={inactive_min}min")
                     if self.arctis.set_inactivity_timer(inactive_min):
                         self._state = "INACTIVE"
-                        self._notify("🔇 Silence detected",
+                        self._notify(f"🔇 {reason} detected",
                                      f"Auto-off in {inactive_min} min.")
 
             self._stop_event.wait(poll)
@@ -346,6 +369,7 @@ def open_settings_window(settings: dict, on_save):
     v_silence_s  = tk.IntVar(value=settings["silence_duration_seconds"])
     v_active_s   = tk.IntVar(value=settings["active_duration_seconds"])
     v_threshold  = tk.DoubleVar(value=settings["silence_threshold"])
+    v_afk        = tk.IntVar(value=settings.get("afk_timeout_minutes", 10))
     v_notifs     = tk.BooleanVar(value=settings.get("notifications_enabled", True))
 
     pad = tk.Frame(win, bg=BG_DARK, padx=25, pady=20)
@@ -358,6 +382,8 @@ def open_settings_window(settings: dict, on_save):
     heading(pad, "AUTO-OFF LOGIC")
     row(pad, "Inactivity timer (when silent)", v_inactive, 1, 90, "min",
         "Sets how many minutes after silence until the headset turns itself off.")
+    row(pad, "AFK / Idle timeout (headset off)", v_afk, 1, 1440, "min",
+        "Sets how many minutes of no keyboard/mouse activity before headset turns off (even if audio is playing).")
 
     heading(pad, "TIMING & DETECTION")
     row(pad, "Silence detection duration",     v_silence_s, 5, 3600, "sec",
@@ -386,6 +412,7 @@ def open_settings_window(settings: dict, on_save):
         settings["silence_duration_seconds"]  = v_silence_s.get()
         settings["active_duration_seconds"]   = v_active_s.get()
         settings["silence_threshold"]         = round(v_threshold.get(), 6)
+        settings["afk_timeout_minutes"]       = v_afk.get()
         settings["notifications_enabled"]     = bool(v_notifs.get())
         save_settings(settings)
         if on_save:
@@ -397,6 +424,7 @@ def open_settings_window(settings: dict, on_save):
         v_silence_s.set(DEFAULTS["silence_duration_seconds"])
         v_active_s.set(DEFAULTS["active_duration_seconds"])
         v_threshold.set(DEFAULTS["silence_threshold"])
+        v_afk.set(DEFAULTS["afk_timeout_minutes"])
         v_notifs.set(DEFAULTS["notifications_enabled"])
 
     btn_frame = tk.Frame(win, bg=BG_DARK, pady=20, padx=25)
