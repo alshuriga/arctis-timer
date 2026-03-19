@@ -324,8 +324,9 @@ class ToolTip:
         tw.wm_geometry("+%d+%d" % (x, y))
         
         label = tk.Label(tw, text=self.text, justify='left',
-                         background="#2d3748", foreground="#f8fafc", 
-                         relief='flat', border=1, padx=8, pady=5, 
+                         background="#ffffff", foreground="#1c1c1e", 
+                         highlightthickness=1, highlightbackground="#d1d1d6",
+                         relief='flat', border=0, padx=8, pady=5, 
                          font=("Segoe UI Variable Text", 9))
         label.pack(ipadx=1)
 
@@ -340,14 +341,14 @@ class ToolTip:
 # Settings window (Tkinter)
 # ---------------------------------------------------------------------------
 
-# --- UI Theme ---
-ACCENT   = "#2dd4bf"   # teal/cyan
-BG_DARK  = "#0f172a"   # deep slate
-BG_CARD  = "#1e293b"   # lighter slate
-FG_TEXT  = "#f8fafc"   # pure white
-FG_DIM   = "#94a3b8"   # slate grey
-BORDER   = "#334155"
-
+# --- UI Theme (macOS Light) ---
+ACCENT   = "#007AFF"   # macOS blue
+BG_DARK  = "#F2F2F7"   # system light gray
+BG_CARD  = "#FFFFFF"   # white cards
+FG_TEXT  = "#1C1C1E"   # label dark
+FG_DIM   = "#8E8E93"   # system gray
+BORDER   = "#D1D1D6"   # outer border grey
+# ---------------------------------------------------------------------------
 
 def open_settings_window(settings: dict, on_save):
     """Open the settings dialog with a modern, stylish look."""
@@ -494,9 +495,9 @@ def open_settings_window(settings: dict, on_save):
 
     save_btn = tk.Button(
         btn_frame, text="Apply Changes", command=on_save_click,
-        bg=ACCENT, fg=BG_DARK, font=("Segoe UI Variable Text", 9, "bold"),
+        bg=ACCENT, fg="#FFFFFF", font=("Segoe UI Variable Text", 9, "bold"),
         relief="flat", padx=20, pady=8, cursor="hand2",
-        activebackground="#5eead4", activeforeground=BG_DARK,
+        activebackground="#0056b3", activeforeground="#FFFFFF",
     )
     save_btn.pack(side="right")
     
@@ -509,10 +510,10 @@ def open_settings_window(settings: dict, on_save):
     cancel_btn.pack(side="right", padx=(0, 10))
 
     reset_btn = tk.Button(
-        btn_frame, text="Reset to Defaults", command=on_reset_click,
-        bg=BG_DARK, fg="#ef4444", font=("Segoe UI Variable Text", 9),
+        btn_frame, text="Reset Defaults", command=on_reset_click,
+        bg=BG_DARK, fg="#FF3B30", font=("Segoe UI Variable Text", 9),
         relief="flat", padx=10, pady=8, cursor="hand2",
-        activebackground=BG_CARD, activeforeground="#f87171"
+        activebackground=BG_CARD, activeforeground="#D70015"
     )
     reset_btn.pack(side="left")
 
