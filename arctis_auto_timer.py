@@ -199,6 +199,11 @@ class AudioMonitor(threading.Thread):
             return 0.0
 
     def run(self):
+        # On startup, immediately mark device as Active/Stay On
+        print("[Audio] Initializing... Sending STAY-ACTIVE signal")
+        self.arctis.set_inactivity_timer(0)
+        self._state = "ACTIVE"
+        
         while not self._stop_event.is_set():
             s = self.settings
             threshold       = s["silence_threshold"]
