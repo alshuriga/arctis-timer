@@ -354,7 +354,7 @@ def open_settings_window(settings: dict, on_save):
     win = tk.Toplevel()
     win.title(f"{APP_NAME} — Settings")
     win.configure(bg=BG_DARK)
-    win.resizable(False, False)
+    win.resizable(False, True) # Allow vertical resize in case of layout overflow
     win.attributes("-topmost", True)
 
     # Apply style to ttk components
@@ -362,6 +362,13 @@ def open_settings_window(settings: dict, on_save):
     style.theme_use('clam')
     style.configure("TSpinbox", fieldbackground=BG_CARD, background=BG_CARD, 
                     foreground=FG_TEXT, bordercolor=BORDER, arrowcolor=ACCENT)
+    
+    # Modern Combobox style
+    style.configure("TCombobox", fieldbackground=BG_CARD, background=BG_CARD, 
+                    foreground=FG_TEXT, bordercolor=BORDER, arrowcolor=ACCENT)
+    win.option_add("*TCombobox*Listbox.background", BG_CARD)
+    win.option_add("*TCombobox*Listbox.foreground", FG_TEXT)
+    win.option_add("*TCombobox*Listbox.selectBackground", ACCENT)
     
     # Modern Checkbutton style
     style.configure("TCheckbutton", background=BG_CARD, foreground=FG_TEXT, font=("Segoe UI Variable Text", 9))
