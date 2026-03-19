@@ -391,19 +391,22 @@ def open_settings_window(settings: dict, on_save):
                      font=("Segoe UI Variable Text", 9))
             u_lbl.pack(side="left")
             
-        def row_combo(parent, lbl_text, var, options, help_text=""):
-            frame = tk.Frame(parent, bg=BG_CARD, pady=10, padx=12, 
-                             highlightthickness=1, highlightbackground=BORDER)
-            frame.pack(fill="x", pady=2)
-            lbl = tk.Label(frame, text=lbl_text, bg=BG_CARD, fg=FG_TEXT,
-                     font=("Segoe UI Variable Text", 9), width=28, anchor="w")
-            lbl.pack(side="left")
-            cb = ttk.Combobox(frame, textvariable=var, values=options, state="readonly", width=12)
-            cb.pack(side="left", padx=(0, 8))
-            if help_text:
-                ToolTip(frame, help_text)
-                ToolTip(lbl, help_text)
-                ToolTip(cb, help_text)
+        if help_text:
+            ToolTip(frame, help_text)
+
+    def row_combo(parent, lbl_text, var, options, help_text=""):
+        frame = tk.Frame(parent, bg=BG_CARD, pady=10, padx=12, 
+                         highlightthickness=1, highlightbackground=BORDER)
+        frame.pack(fill="x", pady=2)
+        lbl = tk.Label(frame, text=lbl_text, bg=BG_CARD, fg=FG_TEXT,
+                 font=("Segoe UI Variable Text", 9), width=28, anchor="w")
+        lbl.pack(side="left")
+        cb = ttk.Combobox(frame, textvariable=var, values=options, state="readonly", width=12)
+        cb.pack(side="left", padx=(0, 8))
+        if help_text:
+            ToolTip(frame, help_text)
+            ToolTip(lbl, help_text)
+            ToolTip(cb, help_text)
 
     # Variables
     v_inactive   = tk.IntVar(value=settings["inactive_timer_minutes"])
