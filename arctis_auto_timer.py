@@ -70,7 +70,7 @@ from win11toast import toast
 # ---------------------------------------------------------------------------
 
 APP_NAME = "Arctis 7 Timer"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.1"
 
 ARCTIS_VID = 0x1038
 ARCTIS_PIDS = {
@@ -131,6 +131,17 @@ DEFAULTS = {
     "detection_mode": "Both",       # "Both" | "Silence only" | "Idle only"
     "notification_mode": "Both",    # "Both" | "Silence only" | "Idle only"
 }
+
+def get_resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 
 DETECTION_MODES = ["Both", "Silence only", "Idle only"]
 
@@ -409,6 +420,15 @@ def open_settings_window(settings: dict, on_save):
     win.resizable(False, True) # Allow vertical resize in case of layout overflow
     win.attributes("-topmost", True)
 
+    # Set window icon
+    try:
+        ico_path = get_resource_path("icon.ico")
+        if os.path.exists(ico_path):
+            win.iconbitmap(ico_path)
+    except Exception:
+        pass
+
+
     # Apply style to ttk components
     style = ttk.Style()
     style.theme_use('clam')
@@ -635,7 +655,16 @@ def open_settings_window(settings: dict, on_save):
 # ---------------------------------------------------------------------------
 
 def _make_icon_image() -> Image.Image:
+    try:
+        png_path = get_resource_path("icon.png")
+        if os.path.exists(png_path):
+            return Image.open(png_path)
+    except Exception:
+        pass
+
+    # Fallback to generated icon if file is missing
     size  = 64
+
     img   = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw  = ImageDraw.Draw(img)
     green = (16, 185, 129, 255)

@@ -4,7 +4,7 @@ a = Analysis(
     ['arctis_auto_timer.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('icon.png', '.'), ('icon.ico', '.')],
     hiddenimports=[
         'pycaw',
         'pycaw.pycaw',
@@ -47,5 +47,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,           # replace with 'icon.ico' if you add one
+    icon='icon.ico',
 )
