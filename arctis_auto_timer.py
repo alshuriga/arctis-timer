@@ -421,6 +421,44 @@ def open_settings_window(settings: dict, on_save):
             ToolTip(lbl, help_text)
             ToolTip(cb, help_text)
 
+    def row_meter(parent, lbl_text, threshold_var):
+        frame = tk.Frame(parent, bg=BG_CARD, pady=10, padx=12, 
+                         highlightthickness=1, highlightbackground=BORDER)
+        frame.pack(fill="x", pady=2)
+        tk.Label(frame, text=lbl_text, bg=BG_CARD, fg=FG_TEXT,
+                 font=("Segoe UI Variable Text", 9), width=28, anchor="w").pack(side="left")
+        
+        c = tk.Canvas(frame, width=150, height=20, bg="#E5E5EA", highlightthickness=0)
+        c.pack(side="left", padx=5)
+        
+        # Internal meter objects
+        bar = c.create_rectangle(0, 0, 0, 20, fill=ACCENT, outline="")
+        mark = c.create_line(0, 0, 0, 20, fill="#FF3B30", width=2)
+        
+        def update_meter():
+            try:
+                # Get current peak from AudioMonitor
+                peak = AudioMonitor._peek()
+                thresh = threshold_var.get()
+                
+                # Scale for visualization (linear for simplicity, maybe log better but let's see)
+                # Max peak usually 1.0 but small values matter here
+                # We'll zoom into the 0.0 to 0.1 range roughly
+                w = 150
+                peak_w = min(w, peak * 500) # zoom in
+                thresh_x = min(w, thresh * 500)
+                
+                c.coords(bar, 0, 0, peak_w, 20)
+                c.coords(mark, thresh_x, 0, thresh_x, 20)
+                
+                if win.winfo_exists():
+                    win.after(100, update_meter)
+            except Exception:
+                pass
+                
+        update_meter()
+        ToolTip(frame, "Visual peak meter. The red line is your current silence threshold.")
+
     # Variables
     v_inactive   = tk.IntVar(value=settings["inactive_timer_minutes"])
     v_silence_s  = tk.IntVar(value=settings["silence_duration_seconds"])
@@ -447,6 +485,7 @@ def open_settings_window(settings: dict, on_save):
         "Sets how many minutes of no activity before headset turns off.")
 
     heading(pad, "TIMING & DETECTION")
+    row_meter(pad, "Live peak meter (red=limit)", v_threshold)
     row(pad, "Silence detection duration",     v_silence_s, 5, 3600, "sec",
         "How long audio must stay quiet before the auto-off timer starts.")
     row(pad, "Audio detection duration",       v_active_s,  1, 60,   "sec",
