@@ -258,26 +258,22 @@ class ToolTip:
         if self.tip_window or not self.text:
             return
         
-        # Calculate root coordinates of the widget triggering the tip
-        root_x = self.widget.winfo_rootx()
-        root_y = self.widget.winfo_rooty()
-        
-        # Offset to show tip near cursor/widget
-        x = root_x + 20
-        y = root_y + self.widget.winfo_height() + 5
+        # Calculate cursor position for more accurate placement
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 5
         
         self.tip_window = tw = tk.Toplevel(self.widget)
+        # Hide the system window decorations
         tw.wm_overrideredirect(True)
-        tw.attributes("-topmost", True) # Ensure it's above the settings window
-        
-        # Set transient to the parent window to group it
-        parent = self.widget.winfo_toplevel()
-        tw.transient(parent)
-        
+        # Ensure it stays on top of the topmost parent
+        tw.wm_attributes("-topmost", True)
+        # Position the window
         tw.wm_geometry("+%d+%d" % (x, y))
+        
         label = tk.Label(tw, text=self.text, justify='left',
-                         background="#2d3748", foreground="#f8fafc", relief='flat',
-                         border=1, padx=8, pady=5, font=("Segoe UI Variable Text", 9))
+                         background="#2d3748", foreground="#f8fafc", 
+                         relief='flat', border=1, padx=8, pady=5, 
+                         font=("Segoe UI Variable Text", 9))
         label.pack(ipadx=1)
 
     def hidetip(self):
@@ -344,8 +340,6 @@ def open_settings_window(settings: dict, on_save):
             
         if help_text:
             ToolTip(frame, help_text)
-            ToolTip(lbl, help_text)
-            ToolTip(sb, help_text)
 
     # Variables
     v_inactive   = tk.IntVar(value=settings["inactive_timer_minutes"])
@@ -386,7 +380,6 @@ def open_settings_window(settings: dict, on_save):
     )
     cb.pack(side="left")
     ToolTip(notif_card, "Show a popup when the headset state changes.")
-    ToolTip(cb, "Show a popup when the headset state changes.")
 
     def on_save_click():
         settings["inactive_timer_minutes"]    = v_inactive.get()
@@ -398,6 +391,13 @@ def open_settings_window(settings: dict, on_save):
         if on_save:
             on_save()
         win.destroy()
+
+    def on_reset_click():
+        v_inactive.set(DEFAULTS["inactive_timer_minutes"])
+        v_silence_s.set(DEFAULTS["silence_duration_seconds"])
+        v_active_s.set(DEFAULTS["active_duration_seconds"])
+        v_threshold.set(DEFAULTS["silence_threshold"])
+        v_notifs.set(DEFAULTS["notifications_enabled"])
 
     btn_frame = tk.Frame(win, bg=BG_DARK, pady=20, padx=25)
     btn_frame.pack(fill="x")
@@ -417,6 +417,14 @@ def open_settings_window(settings: dict, on_save):
         activebackground=BG_CARD, activeforeground=FG_TEXT
     )
     cancel_btn.pack(side="right", padx=(0, 10))
+
+    reset_btn = tk.Button(
+        btn_frame, text="Reset to Defaults", command=on_reset_click,
+        bg=BG_DARK, fg="#ef4444", font=("Segoe UI Variable Text", 9),
+        relief="flat", padx=10, pady=8, cursor="hand2",
+        activebackground=BG_CARD, activeforeground="#f87171"
+    )
+    reset_btn.pack(side="left")
 
     # Center on screen
     win.update_idletasks()
