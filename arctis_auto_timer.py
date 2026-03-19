@@ -257,11 +257,23 @@ class ToolTip:
     def showtip(self, event=None):
         if self.tip_window or not self.text:
             return
-        x, y, cx, cy = self.widget.bbox("insert")
-        x = x + self.widget.winfo_rootx() + 27
-        y = y + cy + self.widget.winfo_rooty() + 27
+        
+        # Calculate root coordinates of the widget triggering the tip
+        root_x = self.widget.winfo_rootx()
+        root_y = self.widget.winfo_rooty()
+        
+        # Offset to show tip near cursor/widget
+        x = root_x + 20
+        y = root_y + self.widget.winfo_height() + 5
+        
         self.tip_window = tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(1)
+        tw.wm_overrideredirect(True)
+        tw.attributes("-topmost", True) # Ensure it's above the settings window
+        
+        # Set transient to the parent window to group it
+        parent = self.widget.winfo_toplevel()
+        tw.transient(parent)
+        
         tw.wm_geometry("+%d+%d" % (x, y))
         label = tk.Label(tw, text=self.text, justify='left',
                          background="#2d3748", foreground="#f8fafc", relief='flat',
